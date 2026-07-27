@@ -84,6 +84,7 @@ public class CredibilityService {
 
     /**
      * 评估签署主体认证强度
+     * 使用签署时的认证级别快照进行评分，避免评分与存证时间窗口耦合
      */
     private int evaluateSignerAuthentication(Long contractId) {
         List<SignRecord> signRecords = signRecordRepository.findByContractIdOrderBySignOrder(contractId);
@@ -96,10 +97,11 @@ public class CredibilityService {
         int count = 0;
 
         for (SignRecord record : signRecords) {
-            Signer signer = signerRepository.findById(record.getSignerId()).orElse(null);
-            if (signer != null) {
+            // 使用签署时的认证级别快照进行评分
+            int score = evaluateSignerLevelSnapshot(record.getSignerAuthStatus(), record.getSignerAuthLevel());
+            if (score > 0) {
                 count++;
-                totalScore += evaluateSignerLevel(signer);
+                totalScore += score;
             }
         }
 
@@ -107,14 +109,14 @@ public class CredibilityService {
     }
 
     /**
-     * 评估单个签约方认证级别
+     * 根据签署时的认证状态和级别评估评分（时间归一化处理）
      */
-    private int evaluateSignerLevel(Signer signer) {
-        if (signer.getAuthStatus() != Signer.AuthStatus.VERIFIED) {
+    private int evaluateSignerLevelSnapshot(Signer.AuthStatus authStatus, Signer.AuthLevel authLevel) {
+        if (authStatus != Signer.AuthStatus.VERIFIED || authLevel == null) {
             return 0;
         }
 
-        switch (signer.getAuthLevel()) {
+        switch (authLevel) {
             case LEVEL4: // CA证书认证
                 return 100;
             case LEVEL3: // 人脸核验

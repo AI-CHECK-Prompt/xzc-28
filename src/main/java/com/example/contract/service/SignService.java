@@ -90,6 +90,10 @@ public class SignService {
         existingRecord.setLocation(request.getLocation());
         existingRecord.setUserAgent(request.getUserAgent());
         existingRecord.setCertificateChain(request.getCertificateChainBase64());
+        
+        // 保存签署时的认证级别快照（用于评分计算，避免时间窗口耦合）
+        existingRecord.setSignerAuthLevel(signer.getAuthLevel());
+        existingRecord.setSignerAuthStatus(signer.getAuthStatus());
 
         // 上链存证
         String txHash = blockchainService.storeEvidence(actionHash, contract.getId());

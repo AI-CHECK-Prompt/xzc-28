@@ -147,6 +147,20 @@ public class SignRecord {
     private String fabricTxHash;
 
     /**
+     * 签署时签约方认证级别（快照，用于评分计算，避免时间窗口耦合）
+     */
+    @Column(length = 32)
+    @Enumerated(EnumType.STRING)
+    private Signer.AuthLevel signerAuthLevel;
+
+    /**
+     * 签署时签约方认证状态（快照，用于评分计算）
+     */
+    @Column(length = 32)
+    @Enumerated(EnumType.STRING)
+    private Signer.AuthStatus signerAuthStatus;
+
+    /**
      * 创建时间
      */
     @Column(nullable = false)
