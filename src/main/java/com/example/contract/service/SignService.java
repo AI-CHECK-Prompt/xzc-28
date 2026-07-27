@@ -29,6 +29,7 @@ public class SignService {
     private final ContractService contractService;
     private final SignerService signerService;
     private final BlockchainService blockchainService;
+    private final EvidencePackageService evidencePackageService;
 
     /**
      * 执行签署
@@ -137,7 +138,6 @@ public class SignService {
             contractService.updateContractStatus(contractId, Contract.ContractStatus.SIGNED);
             contract.setLastSignTime(LocalDateTime.now());
             // 触发自动证据包组装
-            EvidencePackageService evidencePackageService = new EvidencePackageService(null, null, null, null, null);
             evidencePackageService.generateEvidencePackage(contractId);
         } else if (completedCount > 0) {
             contractService.updateContractStatus(contractId, Contract.ContractStatus.PARTIAL);
