@@ -7,12 +7,15 @@ import com.example.contract.exception.BusinessException;
 import com.example.contract.repository.ContractRepository;
 import com.example.contract.repository.SignRecordRepository;
 import com.example.contract.util.HashUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 区块链服务
@@ -123,6 +126,55 @@ public class BlockchainService {
         log.info("跨链同步成功: contractId={}, targetChain={}, crossTxHash={}", 
                 contractId, targetChain, crossTxHash);
         return crossTxHash;
+    }
+
+    /**
+     * 调用外部链验证接口（实际实现需替换为真实SDK调用）
+     * 
+     * @param contractId 合同ID
+     * @param targetChain 目标链类型
+     * @return 外部链返回的JSON响应
+     */
+    public String crossChainVerify(Long contractId, String targetChain) {
+        // 模拟外部链验证响应
+        // 实际实现应调用外部链的SDK或API
+        // 这里根据contractId生成不同的响应，模拟不同验证结果
+        Map<String, Object> response = new HashMap<>();
+        
+        // 模拟验证逻辑：某些contractId返回验证失败
+        if (contractId != null && contractId % 3 == 0) {
+            // 模拟验证失败：verified=false但返回成功状态
+            response.put("verified", false);
+            response.put("errorCode", "VERIFY_FAILED");
+            response.put("errorMessage", "链上验证失败：证据哈希不匹配");
+        } else if (contractId != null && contractId % 5 == 0) {
+            // 模拟外部链异常：返回错误码
+            response.put("verified", false);
+            response.put("errorCode", "CHAIN_ERROR");
+            response.put("errorMessage", "外部链节点通信超时");
+        } else {
+            // 模拟验证成功
+            response.put("verified", true);
+            response.put("errorCode", "0");
+            response.put("chainTxHash", "CHAIN-TX-" + HashUtil.nextSecureRandomHex(32));
+        }
+        
+        response.put("timestamp", System.currentTimeMillis());
+        response.put("chainType", targetChain);
+        
+        try {
+            return objectMapper.writeValueAsString(response);
+        } catch (JsonProcessingException e) {
+            log.error("序列化外部链响应失败: {}", e.getMessage());
+            return "{\"verified\":false,\"errorCode\":\"SERIALIZE_ERROR\",\"errorMessage\":\"响应序列化失败\"}";
+        }
+    }
+
+    private ObjectMapper objectMapper;
+    
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setObjectMapper(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
     }
 
     /**
