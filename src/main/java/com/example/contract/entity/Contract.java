@@ -132,6 +132,21 @@ public class Contract {
      */
     private LocalDateTime lastSignTime;
 
+    /**
+     * 关联流程实例ID
+     */
+    private Long workflowInstanceId;
+
+    /**
+     * 创建时使用的模板ID
+     */
+    private Long workflowTemplateId;
+
+    /**
+     * 模板版本号
+     */
+    private Integer workflowTemplateVersion;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

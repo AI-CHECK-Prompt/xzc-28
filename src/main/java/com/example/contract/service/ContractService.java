@@ -7,9 +7,12 @@ import com.example.contract.dto.response.SignRecordResponse;
 import com.example.contract.entity.Contract;
 import com.example.contract.entity.Signer;
 import com.example.contract.entity.SignRecord;
+import com.example.contract.entity.WorkflowInstance;
+import com.example.contract.entity.WorkflowTemplateVersion;
 import com.example.contract.exception.BusinessException;
 import com.example.contract.repository.ContractRepository;
 import com.example.contract.repository.SignRecordRepository;
+import com.example.contract.repository.WorkflowTemplateVersionRepository;
 import com.example.contract.util.HashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +35,7 @@ public class ContractService {
     private final ContractRepository contractRepository;
     private final SignRecordRepository signRecordRepository;
     private final SignerService signerService;
+    private final WorkflowExecutionEngine workflowExecutionEngine;
 
     /**
      * 创建合同
@@ -63,6 +67,21 @@ public class ContractService {
 
         Contract saved = contractRepository.save(contract);
         log.info("创建合同成功: contractNo={}, name={}", saved.getContractNo(), saved.getName());
+
+        // 如果选择了模板，自动启动流程
+        if (request.getTemplateId() != null) {
+            try {
+                Long templateVersionId = getActiveTemplateVersionId(request.getTemplateId());
+                WorkflowInstance instance = workflowExecutionEngine.startWorkflow(saved.getId(), templateVersionId);
+                saved.setWorkflowInstanceId(instance.getId());
+                saved.setWorkflowTemplateId(request.getTemplateId());
+                saved.setWorkflowTemplateVersion(templateVersionId);
+                saved = contractRepository.save(saved);
+                log.info("合同关联工作流实例成功: contractId={}, instanceId={}", saved.getId(), instance.getId());
+            } catch (Exception e) {
+                log.warn("启动工作流失败: contractId={}, templateId={}", saved.getId(), request.getTemplateId(), e);
+            }
+        }
 
         // 创建待签署记录
         int order = 1;
@@ -179,6 +198,15 @@ public class ContractService {
         Contract contract = getContractEntity(contractId);
         contract.setStatus(status);
         contractRepository.save(contract);
+    }
+
+    /**
+     * 获取活跃的模板版本ID
+     */
+    private Long getActiveTemplateVersionId(Long templateId) {
+        WorkflowTemplateVersion version = WorkflowTemplateVersionRepository.findByTemplateIdAndIsActiveTrue(templateId)
+                .orElseThrow(() -> BusinessException.notFound("模板没有活跃版本"));
+        return version.getId();
     }
 
     /**

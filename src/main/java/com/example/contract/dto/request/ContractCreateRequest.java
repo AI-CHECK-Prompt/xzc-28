@@ -69,4 +69,9 @@ public class ContractCreateRequest {
     @NotNull(message = "创建人ID不能为空")
     private Long creatorId;
 
+    /**
+     * 关联的工作流模板ID（可选）
+     */
+    private Long templateId;
+
 }
