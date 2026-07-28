@@ -34,6 +34,7 @@ public class ContractService {
 
     private final ContractRepository contractRepository;
     private final SignRecordRepository signRecordRepository;
+    private final WorkflowTemplateVersionRepository workflowTemplateVersionRepository;
     private final SignerService signerService;
     private final WorkflowExecutionEngine workflowExecutionEngine;
 
@@ -204,7 +205,7 @@ public class ContractService {
      * 获取活跃的模板版本ID
      */
     private Long getActiveTemplateVersionId(Long templateId) {
-        WorkflowTemplateVersion version = WorkflowTemplateVersionRepository.findByTemplateIdAndIsActiveTrue(templateId)
+        WorkflowTemplateVersion version = workflowTemplateVersionRepository.findByTemplateIdAndIsActiveTrue(templateId)
                 .orElseThrow(() -> BusinessException.notFound("模板没有活跃版本"));
         return version.getId();
     }
