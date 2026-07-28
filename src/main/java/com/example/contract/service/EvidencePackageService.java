@@ -4,6 +4,7 @@ import com.example.contract.dto.response.EvidencePackageResponse;
 import com.example.contract.entity.Contract;
 import com.example.contract.entity.EvidencePackage;
 import com.example.contract.entity.SignRecord;
+import com.example.contract.entity.Signer;
 import com.example.contract.exception.BusinessException;
 import com.example.contract.repository.ContractRepository;
 import com.example.contract.repository.EvidencePackageRepository;
@@ -35,6 +36,7 @@ public class EvidencePackageService {
     private final SignRecordRepository signRecordRepository;
     private final CredibilityService credibilityService;
     private final ObjectMapper objectMapper;
+    private final SignerService signerService;
 
     /**
      * 生成证据包
@@ -145,7 +147,26 @@ public class EvidencePackageService {
             signerInfo.put("signerId", record.getSignerId());
             signerInfo.put("signTime", record.getSignTime() != null ? record.getSignTime().toString() : null);
             signerInfo.put("timeSource", record.getTimeSource() != null ? record.getTimeSource().name() : null);
-            signerInfo.put("actionHash", record.getActionHash());
+
+            // 处理actionHash：若签署已完成但哈希为空，说明数据不一致，从已有数据重新计算
+            String actionHash = record.getActionHash();
+            if (SignRecord.SignStatus.COMPLETED == record.getStatus()
+                    && (actionHash == null || actionHash.isEmpty())) {
+                log.warn("检测到数据不一致: 签署记录已完成但actionHash为空, contractId={}, signerId={}, recordId={}",
+                        contract.getId(), record.getSignerId(), record.getId());
+                // 根据签署数据重新计算哈希
+                Signer signer = signerService.getSignerEntity(record.getSignerId());
+                actionHash = HashUtil.combineHash(
+                        contract.getContractNo(),
+                        signer.getIdentityStamp(),
+                        record.getSignTime() != null ? String.valueOf(record.getSignTime()) : "",
+                        record.getSignature() != null ? record.getSignature() : "",
+                        record.getIpAddress() != null ? record.getIpAddress() : ""
+                );
+                log.info("重新计算actionHash: contractNo={}, signerId={}, newHash={}",
+                        contract.getContractNo(), record.getSignerId(), actionHash);
+            }
+            signerInfo.put("actionHash", actionHash);
             signerInfo.put("signatureAlgorithm", record.getSignatureAlgorithm());
             signerInfo.put("deviceType", record.getDeviceType() != null ? record.getDeviceType().name() : null);
             signerInfo.put("ipAddress", record.getIpAddress());
