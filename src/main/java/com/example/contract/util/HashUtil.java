@@ -4,6 +4,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -18,6 +20,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * </ul>
  */
 public class HashUtil {
+
+    /**
+     * 日期时间格式化器（毫秒精度）
+     */
+    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
     /**
      * 安全随机数生成器
@@ -153,6 +160,20 @@ public class HashUtil {
      */
     public static int nextInt(int min, int max) {
         return ThreadLocalRandom.current().nextInt(min, max);
+    }
+
+    /**
+     * 格式化 LocalDateTime 为统一字符串（毫秒精度）
+     * <p>用于确保链上存证与验证时时间戳格式完全一致，避免哈希比对失败
+     *
+     * @param dateTime 日期时间对象
+     * @return 格式化后的字符串，格式：yyyy-MM-dd'T'HH:mm:ss.SSS
+     */
+    public static String formatDateTime(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return "";
+        }
+        return dateTime.format(DATETIME_FORMATTER);
     }
 
 }

@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.example.contract.util.HashUtil.formatDateTime;
+
 /**
  * 证据包服务
  */
@@ -145,7 +147,7 @@ public class EvidencePackageService {
             Map<String, Object> signerInfo = new HashMap<>();
             signerInfo.put("signOrder", record.getSignOrder());
             signerInfo.put("signerId", record.getSignerId());
-            signerInfo.put("signTime", record.getSignTime() != null ? record.getSignTime().toString() : null);
+            signerInfo.put("signTime", formatDateTime(record.getSignTime()));
             signerInfo.put("timeSource", record.getTimeSource() != null ? record.getTimeSource().name() : null);
 
             // 处理actionHash：若签署已完成但哈希为空，说明数据不一致，从已有数据重新计算
@@ -159,7 +161,7 @@ public class EvidencePackageService {
                 actionHash = HashUtil.combineHash(
                         contract.getContractNo(),
                         signer.getIdentityStamp(),
-                        record.getSignTime() != null ? String.valueOf(record.getSignTime()) : "",
+                        formatDateTime(record.getSignTime()),
                         record.getSignature() != null ? record.getSignature() : "",
                         record.getIpAddress() != null ? record.getIpAddress() : ""
                 );

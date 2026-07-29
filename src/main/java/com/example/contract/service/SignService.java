@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.example.contract.util.HashUtil.formatDateTime;
+
 /**
  * 签署服务
  */
@@ -67,7 +69,7 @@ public class SignService {
         String actionHash = HashUtil.combineHash(
                 contract.getContractNo(),
                 signer.getIdentityStamp(),
-                String.valueOf(signTime),
+                formatDateTime(signTime),
                 request.getSignatureBase64(),
                 request.getIpAddress()
         );
